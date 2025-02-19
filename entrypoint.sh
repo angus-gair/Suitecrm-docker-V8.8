@@ -2,7 +2,7 @@
 set -e
 
 # Exit if not run as root
-sudo -i
+# sudo -i
 if [[ $EUID -ne 0 ]]; then
   echo "This script must be run as root or with sudo."
   echo "Usage: sudo $0"
@@ -21,25 +21,27 @@ do
 done
 echo "Database is up!"
 
+## NEED TO FIX
 # 2) If SuiteCRM not present, copy or download
-if [ ! -f /var/www/html/public/legacy/composer.json ]; then
-  echo "No SuiteCRM found. Downloading..."
-  cd /var/www/html
-  # Example: download 8.8.0
-  curl -Ls https://suitecrm.com/download/165/suite88/565090/suitecrm-8-8-0.zip -o suitecrm.zip
-  unzip suitecrm.zip
-  # The zip may have a subfolder inside it. Adjust your paths accordingly.
-  mv suitecrm-8.8.0/* ./
-  mv suitecrm-8.8.0/.* ./ || true
-  rm -rf suitecrm-8.8.0 suitecrm.zip
-fi
+# if [ ! -f /var/www/html/public/legacy/composer.json ]; then
+#   echo "No SuiteCRM found. Downloading..."
+#   cd /var/www/html
+#   # Example: download 8.8.0
+#   curl -Ls https://suitecrm.com/download/165/suite88/565090/suitecrm-8-8-0.zip -o suitecrm.zip
+#   unzip suitecrm.zip
+#   # The zip may have a subfolder inside it. Adjust your paths accordingly.
+#   mv suitecrm-8.8.0/* ./
+#   mv suitecrm-8.8.0/.* ./ || true
+#   rm -rf suitecrm-8.8.0 suitecrm.zip
+# fi
 
 # 3) Run composer (if needed)
-if [ -f /var/www/html/composer.json ]; then
-  echo "Installing backend dependencies..."
-  composer install --no-interaction --ignore-platform-reqs
-fi
+# if [ -f /var/www/html/composer.json ]; then
+#   echo "Installing backend dependencies..."
+#   composer install --no-interaction --ignore-platform-reqs
+# fi
 
+  
 # 4) If not installed, install via CLI
 if [ ! -f /var/www/html/public/legacy/config.php ]; then
   echo "Running CLI install..."

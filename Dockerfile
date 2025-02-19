@@ -21,15 +21,23 @@ RUN apt-get update && apt-get install -y \
     openssl \
     git \
     cron \
+    netcat-openbsd \
     && docker-php-ext-install \
        gd \
+       # cli \ 
+       #curl \ 
+       #common \
+       #json \ 
+       pdo_mysql \  
        mysqli \
        intl \
+       xml \ 
        mbstring \
        zip \
        soap \
     && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-enable gd
+
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
