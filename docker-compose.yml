@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: suitecrm_mariadb
+    restart: always
+    command: --max-allowed-packet=256M
+    env_file:
+      - .env
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASS}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - suitecrm_net
+
+  suitecrm:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: suitecrm_app
+    restart: always
+    depends_on:
+      - mariadb
+    env_file:
+      - .env
+    environment:
+      # The main environment variables needed for the CLI install:
+      - DB_HOST=mariadb
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      # Example: admin credentials for SuiteCRM
+      - SUITECRM_ADMIN_USER=${SUITECRM_ADMIN_USER}
+      - SUITECRM_ADMIN_PASSWORD=${SUITECRM_ADMIN_PASSWORD}
+      - SUITECRM_SITE_URL=${SUITECRM_SITE_URL}
+    ports:
+      - "80:80"
+      - "443:443"
+      # If you enable HTTPS in Dockerfile, or have a proxy, you can map "443:443" as well
+    volumes:
+      - suitecrm_data:/var/www/html
+    networks:
+      - suitecrm_net
+
+volumes:
+  mariadb_data:
+  suitecrm_data:
+
+networks:
+  suitecrm_net:
+    driver: bridge
