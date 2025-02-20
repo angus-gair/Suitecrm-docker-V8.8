@@ -17,6 +17,11 @@ services:
       - mariadb_data:/var/lib/mysql
     networks:
       - suitecrm_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   suitecrm:
     build: 
@@ -25,24 +30,22 @@ services:
     container_name: suitecrm_app
     restart: always
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     env_file:
       - .env
     environment:
-      # The main environment variables needed for the CLI install:
       - ALLOW_EMPTY_PASSWORD=yes
       - DB_HOST=mariadb
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
-      # Example: admin credentials for SuiteCRM
       - SUITECRM_ADMIN_USER=${SUITECRM_ADMIN_USER}
       - SUITECRM_ADMIN_PASSWORD=${SUITECRM_ADMIN_PASSWORD}
       - SUITECRM_SITE_URL=${SUITECRM_SITE_URL}
     ports:
       - "80:80"
       - "443:443"
-      # If you enable HTTPS in Dockerfile, or have a proxy, you can map "443:443" as well
     volumes:
       - suitecrm_data:/var/www/html
     networks:

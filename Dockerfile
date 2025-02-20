@@ -1,9 +1,9 @@
 FROM php:8.1-apache
 
-# Environment variables to reduce interactive prompts, etc.
+# Environment variables to reduce interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# define timezone
+# Define timezone
 ENV TZ=Australia/Sydney
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -24,10 +24,6 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     && docker-php-ext-install \
        gd \
-       # cli \ 
-       #curl \ 
-       #common \
-       #json \ 
        pdo_mysql \  
        mysqli \
        intl \
@@ -38,20 +34,32 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-enable gd
 
+# Enable Apache modules
+RUN a2enmod rewrite headers ssl
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
-
-# 3. Increase PHP limits by adding a custom .ini in /usr/local/etc/php/conf.d/
+# Increase PHP limits by adding a custom .ini
 RUN echo "memory_limit=512M\n" \
          "upload_max_filesize=100M\n" \
          "post_max_size=100M\n" \
+         "error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE & ~E_WARNING\n" \
     > /usr/local/etc/php/conf.d/suitecrm.ini
 
-# Copy any custom apache conf if desired
-# COPY suitecrm.conf /etc/apache2/sites-available/000-default.conf
+# Configure Apache for SuiteCRM
+RUN echo '<VirtualHost *:80>\n\
+    DocumentRoot /var/www/html/public\n\
+    <Directory /var/www/html/public>\n\
+        Options Indexes FollowSymLinks\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
+    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
 
-# Copy your entrypoint script (which handles SuiteCRM installation steps)
+# Add server name to avoid warnings
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Copy your entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
