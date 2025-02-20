@@ -1,5 +1,8 @@
 # ubun-crm
 5.75.135.254
+/var/www/html/public/legacy/include/SugarOauth.php
+# Sugar Smarty
+/var/www/html/public/legacy/include/Sugar_Smarty.php
 
 update \etc\apache2\sites-available\000-default.conf
 <VirtualHost *:80>
