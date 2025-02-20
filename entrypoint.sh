@@ -28,6 +28,12 @@ if [ ! -f /var/www/html/composer.json ]; then
   mv suitecrm-8.8.0/* ./
   mv suitecrm-8.8.0/.* ./ 2>/dev/null || true
   rm -rf suitecrm-8.8.0 suitecrm.zip
+  
+  # Ensure custom Smarty file is preserved after download
+  if [ -f /root/suitecrm/smarty/Sugar_Smarty.php ]; then
+    echo "Copying custom Smarty file..."
+    cp /root/suitecrm/smarty/Sugar_Smarty.php /var/www/html/public/legacy/include/Sugar_Smarty.php
+  fi
 fi
 
 # Set initial file permissions
@@ -36,6 +42,13 @@ chown -R www-data:www-data /var/www/html
 find /var/www/html -type d -exec chmod 755 {} \;
 find /var/www/html -type f -exec chmod 644 {} \;
 chmod +x /var/www/html/bin/console
+
+# Make sure the Apache config files are correctly in place
+echo "Ensuring Apache configuration files are in place..."
+if [ -f /root/suitecrm/apache/000-default.conf ]; then
+  cp /root/suitecrm/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
+  cp /root/suitecrm/apache/000-default.conf /etc/apache2/sites-enabled/000-default.conf
+fi
 
 # Run CLI install if not installed
 if [ ! -f /var/www/html/public/legacy/config.php ]; then
@@ -50,6 +63,12 @@ if [ ! -f /var/www/html/public/legacy/config.php ]; then
     -N "$DB_NAME" \
     -S "${SUITECRM_SITE_URL:-http://localhost}" \
     -d "no"
+fi
+
+# After installation, ensure custom Smarty file is in place
+if [ -f /root/suitecrm/smarty/Sugar_Smarty.php ]; then
+  echo "Ensuring custom Smarty file is in place after installation..."
+  cp /root/suitecrm/smarty/Sugar_Smarty.php /var/www/html/public/legacy/include/Sugar_Smarty.php
 fi
 
 # Reset permissions after installation
@@ -67,8 +86,18 @@ if [ ! -f private.key ]; then
   echo "Generating OAuth2 private/public keys..."
   openssl genrsa -out private.key 2048
   openssl rsa -in private.key -pubout -out public.key
-  chmod 600 private.key public.key
-  chown www-data:www-data private.key public.key
+fi
+
+# Always set proper permissions for OAuth keys
+echo "Setting OAuth key permissions..."
+chmod 600 private.key public.key
+chown www-data:www-data private.key public.key
+
+# Ensure proper permissions for OAuth CryptKey class
+echo "Setting permissions for OAuth CryptKey class..."
+if [ -f /var/www/html/vendor/league/oauth2-server/src/CryptKey.php ]; then
+  chmod 644 /var/www/html/vendor/league/oauth2-server/src/CryptKey.php
+  chown www-data:www-data /var/www/html/vendor/league/oauth2-server/src/CryptKey.php
 fi
 
 # Double check legacy config for site_url
