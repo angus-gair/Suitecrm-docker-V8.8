@@ -1,0 +1,22 @@
+# Ignore SuiteCRM application directory
+/root/suitecrm/app
+
+# Docker related
+.env
+docker-compose.override.yml
+
+# Logs
+*.log
+
+# Backups
+*.tar.gz
+*.zip
+*.bak
+
+# PHP related
+vendor/
+composer.lock
+
+# IDE files
+.idea/
+.vscode/
