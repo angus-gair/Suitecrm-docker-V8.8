@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: suitecrm_mariadb
+    restart: always
+    command: --max-allowed-packet=256M
+    env_file:
+      - .env
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASS}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - suitecrm_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  suitecrm:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: suitecrm_app
+    restart: always
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - DB_HOST=mariadb
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - SUITECRM_ADMIN_USER=${SUITECRM_ADMIN_USER}
+      - SUITECRM_ADMIN_PASSWORD=${SUITECRM_ADMIN_PASSWORD}
+      - SUITECRM_SITE_URL=${SUITECRM_SITE_URL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - suitecrm_data:/var/www/html
+     # - ./oauth2:/var/www/html/legacy/Api/V8/OAuth2:ro
+    networks:
+      - suitecrm_net
+    command: >
+      bash -c "chmod 600 /var/www/html/public/legacy/Api/V8/OAuth2/private.key &&
+               chmod 600 /var/www/html/public/legacy/Api/V8/OAuth2/public.key &&
+               apache2-foreground"
+
+volumes:
+  mariadb_data:
+  suitecrm_data:
+
+networks:
+  suitecrm_net:
+    driver: bridge
